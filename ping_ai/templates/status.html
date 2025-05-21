@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Status Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --online: #10B981;
+            --offline: #EF4444;
+            --background: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            min-width: 80px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .online-stat .stat-value {
+            color: var(--online);
+        }
+
+        .offline-stat .stat-value {
+            color: var(--offline);
+        }
+
+        .hosts-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* Стили для табличного представления */
+        .hosts-header {
+            display: grid;
+            grid-template-columns: 30px 1fr 2fr 100px;
+            gap: 16px;
+            padding: 12px 16px;
+            background-color: var(--background);
+            border-bottom: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .host-row {
+            display: grid;
+            grid-template-columns: 30px 1fr 2fr 100px;
+            gap: 16px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .host-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Стили для плиточного представления */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .host-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--offline);
+        }
+
+        .host-card.online {
+            border-left-color: var(--online);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .card-status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .card-status-online {
+            background-color: var(--online);
+        }
+
+        .card-status-offline {
+            background-color: var(--offline);
+        }
+
+        .card-address {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .card-status {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-status-online-text {
+            color: var(--online);
+        }
+
+        .card-status-offline-text {
+            color: var(--offline);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background-color: var(--online);
+        }
+
+        .status-offline {
+            background-color: var(--offline);
+        }
+
+        .host-address {
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .host-description {
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .host-status {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-online-text {
+            color: var(--online);
+        }
+
+        .status-offline-text {
+            color: var(--offline);
+        }
+
+        .last-update {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+
+        .search-container {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+        }
+
+        #search-input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .view-toggle {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .view-toggle-btn {
+            padding: 8px 12px;
+            background-color: var(--card-bg);
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .view-toggle-btn.active {
+            background-color: var(--border);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .page-btn.active {
+            background-color: #E5E7EB;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Network Status Monitor</h1>
+            <div class="stats">
+                <div class="stat-card online-stat">
+                    <div class="stat-value">{{ online_count }}</div>
+                    <div class="stat-label">Online</div>
+                </div>
+                <div class="stat-card offline-stat">
+                    <div class="stat-value">{{ offline_count }}</div>
+                    <div class="stat-label">Offline</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_count }}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search by IP or description...">
+            <div class="view-toggle">
+                <button class="view-toggle-btn active" data-view="table">Table</button>
+                <button class="view-toggle-btn" data-view="cards">Cards</button>
+            </div>
+        </div>
+
+        <!-- Табличное представление -->
+        <div id="table-view" class="hosts-container">
+            <div class="hosts-header">
+                <div>Status</div>
+                <div>IP Address</div>
+                <div>Description</div>
+                <div>Status</div>
+            </div>
+            <div id="hosts-list">
+                <!-- Offline hosts first -->
+                {% for ip, status in hosts.items() if not status %}
+                <div class="host-row">
+                    <div class="status-indicator status-offline"></div>
+                    <div class="host-address">{{ ip }}</div>
+                    <div class="host-description" title="{{ descriptions[ip] }}">{{ descriptions[ip] }}</div>
+                    <div class="host-status status-offline-text">Offline</div>
+                </div>
+                {% endfor %}
+
+                <!-- Online hosts -->
+                {% for ip, status in hosts.items() if status %}
+                <div class="host-row">
+                    <div class="status-indicator status-online"></div>
+                    <div class="host-address">{{ ip }}</div>
+                    <div class="host-description" title="{{ descriptions[ip] }}">{{ descriptions[ip] }}</div>
+                    <div class="host-status status-online-text">Online</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Плиточное представление -->
+        <div id="cards-view" class="cards-container hidden">
+            <!-- Offline hosts first -->
+            {% for ip, status in hosts.items() if not status %}
+            <div class="host-card">
+                <div class="card-header">
+                    <div class="card-status-indicator card-status-offline"></div>
+                    <div class="card-address">{{ ip }}</div>
+                </div>
+                <div class="card-description" title="{{ descriptions[ip] }}">{{ descriptions[ip] }}</div>
+                <div class="card-status card-status-offline-text">Offline</div>
+            </div>
+            {% endfor %}
+
+            <!-- Online hosts -->
+            {% for ip, status in hosts.items() if status %}
+            <div class="host-card online">
+                <div class="card-header">
+                    <div class="card-status-indicator card-status-online"></div>
+                    <div class="card-address">{{ ip }}</div>
+                </div>
+                <div class="card-description" title="{{ descriptions[ip] }}">{{ descriptions[ip] }}</div>
+                <div class="card-status card-status-online-text">Online</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <!-- More pages as needed -->
+        </div>
+
+        <div class="last-update">
+            Last updated: {{ last_update }}
+        </div>
+    </div>
+
+    <script>
+        // Search functionality
+        function filterHosts(searchTerm) {
+            const rows = document.querySelectorAll('.host-row');
+            const cards = document.querySelectorAll('.host-card');
+            
+            searchTerm = searchTerm.toLowerCase();
+            
+            rows.forEach(row => {
+                const ip = row.querySelector('.host-address').textContent.toLowerCase();
+                const desc = row.querySelector('.host-description').textContent.toLowerCase();
+                if (ip.includes(searchTerm) || desc.includes(searchTerm)) {
+                    row.style.display = 'grid';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            cards.forEach(card => {
+                const ip = card.querySelector('.card-address').textContent.toLowerCase();
+                const desc = card.querySelector('.card-description').textContent.toLowerCase();
+                if (ip.includes(searchTerm) || desc.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            filterHosts(e.target.value);
+        });
+
+        // View toggle
+        const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
+        const tableView = document.getElementById('table-view');
+        const cardsView = document.getElementById('cards-view');
+
+        viewToggleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                viewToggleBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (this.dataset.view === 'table') {
+                    tableView.classList.remove('hidden');
+                    cardsView.classList.add('hidden');
+                } else {
+                    tableView.classList.add('hidden');
+                    cardsView.classList.remove('hidden');
+                }
+                
+                // Применяем текущий поисковый запрос к новому виду
+                const searchTerm = document.getElementById('search-input').value;
+                if (searchTerm) {
+                    filterHosts(searchTerm);
+                }
+            });
+        });
+
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
