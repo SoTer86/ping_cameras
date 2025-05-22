@@ -9,7 +9,7 @@ from modulesip import excel_to_ips
 app = Flask(__name__)
 
 # Конфигурация
-PING_INTERVAL = 30  # Интервал пинга в секундах
+PING_INTERVAL = 300  # Интервал пинга в секундах
 
 ip_data = excel_to_ips("cameras.xlsx")
 IP_LIST = list(ip_data.keys())
@@ -56,7 +56,7 @@ def update_statuses():
 @app.route('/')
 def status_page():
     """Главная страница с отображением статусов"""
-    return render_template('status.html', 
+    return render_template('status2.html', 
                          hosts=status_data["hosts"], 
                          descriptions=status_data["descriptions"],
                          last_update=status_data["last_update"],

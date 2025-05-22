@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг камер</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --online: #10B981;
+            --offline: #EF4444;
+            --background: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+            --warning-bg: #FEF2F2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            padding: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .status-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .status-title {
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-counters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .status-counter {
+            text-align: center;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-width: 120px;
+            flex: 1 1 auto;
+            max-width: 180px;
+        }
+
+        .counter-value {
+            font-size: clamp(24px, 5vw, 36px);
+            font-weight: 600;
+        }
+
+        .counter-label {
+            font-size: clamp(12px, 3vw, 14px);
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .online-counter .counter-value {
+            color: var(--online);
+        }
+
+        .offline-counter .counter-value {
+            color: var(--offline);
+        }
+
+        .search-container {
+            margin: 0 auto 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .cameras-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
+            gap: 10px;
+            margin: 0 auto 30px;
+            max-width: 1000px;
+        }
+
+        .camera-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .camera-dot:hover {
+            transform: scale(1.3);
+        }
+
+        .camera-dot.online {
+            background-color: var(--online);
+        }
+
+        .camera-dot.offline {
+            background-color: var(--offline);
+        }
+
+        .camera-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 220px;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .camera-dot:hover .camera-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .offline-list {
+            background-color: var(--warning-bg);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .offline-list-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--offline);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .offline-list-title svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .offline-cameras {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .offline-camera {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid var(--offline);
+            font-size: 13px;
+        }
+
+        .offline-camera-ip {
+            font-family: monospace;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .offline-camera-desc {
+            color: var(--text-secondary);
+        }
+
+        .last-update {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            .status-counters {
+                gap: 8px;
+            }
+            
+            .status-counter {
+                padding: 12px;
+                min-width: 100px;
+            }
+            
+            .cameras-grid {
+                gap: 8px;
+            }
+            
+            .camera-tooltip {
+                width: 180px;
+                font-size: 12px;
+            }
+            
+            .offline-cameras {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .status-counter {
+                min-width: 80px;
+                padding: 10px;
+            }
+            
+            .counter-value {
+                font-size: 20px;
+            }
+            
+            .camera-tooltip {
+                width: 160px;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-header">
+            <h1 class="status-title">Мониторинг камер</h1>
+            
+            <div class="status-counters">
+                <div class="status-counter online-counter">
+                    <div class="counter-value">{{ online_count }}</div>
+                    <div class="counter-label">Онлайн</div>
+                </div>
+                <div class="status-counter offline-counter">
+                    <div class="counter-value">{{ offline_count }}</div>
+                    <div class="counter-label">Оффлайн</div>
+                </div>
+                <div class="status-counter total-counter">
+                    <div class="counter-value">{{ total_count }}</div>
+                    <div class="counter-label">Всего</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Поиск по IP или описанию...">
+        </div>
+
+        <div class="cameras-grid" id="cameras-container">
+            <!-- Оффлайн камеры сначала -->
+            {% for ip, status in hosts.items() if not status %}
+            <div class="camera-dot offline" data-ip="{{ ip }}" data-description="{{ descriptions[ip] }}">
+                <div class="camera-tooltip">
+                    <div class="tooltip-header">
+                        <div class="tooltip-status" style="background-color: var(--offline)"></div>
+                        <div class="tooltip-ip">{{ ip }}</div>
+                    </div>
+                    <div class="tooltip-description">{{ descriptions[ip] }}</div>
+                    <div class="tooltip-status-text offline-text">Оффлайн</div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Онлайн камеры -->
+            {% for ip, status in hosts.items() if status %}
+            <div class="camera-dot online" data-ip="{{ ip }}" data-description="{{ descriptions[ip] }}">
+                <div class="camera-tooltip">
+                    <div class="tooltip-header">
+                        <div class="tooltip-status" style="background-color: var(--online)"></div>
+                        <div class="tooltip-ip">{{ ip }}</div>
+                    </div>
+                    <div class="tooltip-description">{{ descriptions[ip] }}</div>
+                    <div class="tooltip-status-text online-text">Онлайн</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if offline_count > 0 %}
+        <div class="offline-list">
+            <div class="offline-list-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Недоступные камеры ({{ offline_count }})</span>
+            </div>
+            <div class="offline-cameras">
+                {% for ip, status in hosts.items() if not status %}
+                <div class="offline-camera">
+                    <div class="offline-camera-ip">{{ ip }}</div>
+                    <div class="offline-camera-desc">{{ descriptions[ip] }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="last-update">
+            Обновлено: {{ last_update }}
+        </div>
+    </div>
+
+    <script>
+        // Функция поиска
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cameras = document.querySelectorAll('.camera-dot');
+            
+            cameras.forEach(camera => {
+                const ip = camera.dataset.ip.toLowerCase();
+                const description = camera.dataset.description.toLowerCase();
+                
+                if (ip.includes(searchTerm) || description.includes(searchTerm)) {
+                    camera.style.display = 'block';
+                } else {
+                    camera.style.display = 'none';
+                }
+            });
+        });
+
+        // Автообновление каждые 30 секунд
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>
